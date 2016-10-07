@@ -1,3 +1,5 @@
+> # Not ready for public use yet. Still some TODOs
+
 # Generate Awesome
 
 A command-line tool for generating [Awesome Lists][] from a set of data files.
