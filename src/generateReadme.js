@@ -42,7 +42,7 @@ const anchorify = (text) => (
 const GITHUB_URL = 'https://github.com';
 
 const numberWithCommas = (n) => (
-  n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  n && n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 );
 
 const fetchGitHubDetails = (githubURL) => (
@@ -116,16 +116,21 @@ const generateReadme = () => {
         const awesomeURL = awesomeRepo && `${GITHUB_URL}/${awesomeRepo}`;
 
         if (githubRepo) {
-          return fetchGitHubDetails(githubURL).then(({ starCount, lastCommit }) => ({
-            awesomeURL,
-            name,
-            githubURL,
-            starCount,
-            starCountText: numberWithCommas(starCount),
-            lastCommit: lastCommit.format('YYYY/MM/DD'),
-            url,
-            description,
-          }));
+          return fetchGitHubDetails(githubURL).then(({ starCount, lastCommit }) => {
+            if (typeof starCount !== 'number') {
+              throw new Error(`Error: no star count for ${githubURL}`);
+            }
+            return {
+              awesomeURL,
+              name,
+              githubURL,
+              starCount,
+              starCountText: numberWithCommas(starCount),
+              lastCommit: lastCommit.format('YYYY/MM/DD'),
+              url,
+              description,
+            };
+          });
         }
 
         return {
