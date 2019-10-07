@@ -126,7 +126,7 @@ const generateReadme = () => {
               githubURL,
               starCount,
               starCountText: numberWithCommas(starCount),
-              lastCommit: lastCommit.format('YYYY/MM/DD'),
+              lastCommit: lastCommit.format('YYYY-MM-DD'),
               url,
               description,
             };
