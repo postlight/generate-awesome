@@ -10,17 +10,15 @@ const Xray = require('x-ray');
 const Handlebars = require('handlebars');
 const moment = require('moment');
 const glob = require('glob');
+const numeral = require('numeral');
 
 const x = Xray({
   filters: {
-    removeCommas(value) {
-      return value && value.replace(',', '');
-    },
     trim(value) {
       return value && value.trim();
     },
-    toInt(value) {
-      return value && parseInt(value, 10);
+    toNumeral(value) {
+      return numeral(value).value();
     },
     toMoment(value) {
       return moment(value);
@@ -48,7 +46,7 @@ const numberWithCommas = (n) => (
 const fetchGitHubDetails = (githubURL) => (
   new Promise((resolve, reject) => {
     x(githubURL, {
-      starCount: '.js-social-count | trim | removeCommas | toInt',
+      starCount: '.js-social-count | trim | toNumeral',
       lastCommit: 'relative-time@datetime | trim | toMoment',
     })((err, data) => {
       if (err) {
