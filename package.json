@@ -20,7 +20,7 @@
     "commander": "2.9.0",
     "es6-promisify": "5.0.0",
     "glob": "7.1.0",
-    "handlebars": "4.0.5",
+    "handlebars": "4.3.0",
     "humps": "1.1.0",
     "lodash": "4.17.13",
     "moment": "2.14.1",
