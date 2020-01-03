@@ -26,17 +26,12 @@ cli
     const startedAt = new Date();
     console.log(`Generating ${green('README.md')}`);
 
-    generateReadme()
-      .then(allCMSES => {
-        const milliseconds = new Date().getTime() - startedAt;
-        console.log(
-          `Finished README.md generation for ${allCMSES.length}` +
-            ` CMSes in ${milliseconds / 1000.0} seconds.`
-        );
-      })
-      .catch(error => {
-        console.error(red('Error generating readme'), error);
-      });
+    const allCMSES = generateReadme();
+    const milliseconds = new Date().getTime() - startedAt;
+    console.log(
+      `Finished README.md generation for ${allCMSES.length}` +
+        ` CMSes in ${milliseconds / 1000.0} seconds.`
+    );
   });
 
 cli
