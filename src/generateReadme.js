@@ -29,23 +29,22 @@ const x = Xray({
 });
 
 // From https://git.io/viRqj
-const anchorify = (text) => (
-  text.toLowerCase()
+const anchorify = text =>
+  text
+    .toLowerCase()
     .split(/ /)
     .join('-')
     .split(/\t/)
     .join('--')
     .split(/[|$&`~=\\\/@+*!?({[\]})<>=.,;:'"^]/)
-    .join('')
-);
+    .join('');
 
 const GITHUB_URL = 'https://github.com';
 
-const numberWithCommas = (n) => (
-  n && n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-);
+const numberWithCommas = n =>
+  n && n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
-const fetchGitHubDetails = (githubURL) => (
+const fetchGitHubDetails = githubURL =>
   new Promise((resolve, reject) => {
     x(githubURL, {
       starCount: '.js-social-count | trim | removeCommas | toInt',
@@ -57,15 +56,16 @@ const fetchGitHubDetails = (githubURL) => (
       }
       return resolve(data);
     });
-  })
-);
+  });
 
 // Find duplicate entries in an array of objects for a given key.
-const duplicatesForKey = (objectArray, key) => (
-  objectArray.filter((object, index) => (
-    object[key] && find(objectArray.slice(index + 1), [key, object[key]])
-  )).map((object) => object[key])
-);
+const duplicatesForKey = (objectArray, key) =>
+  objectArray
+    .filter(
+      (object, index) =>
+        object[key] && find(objectArray.slice(index + 1), [key, object[key]])
+    )
+    .map(object => object[key]);
 
 const generateReadme = () => {
   const readmeTemplate = Handlebars.compile(
@@ -75,9 +75,9 @@ const generateReadme = () => {
   const metaContents = fs.readFileSync('./meta.toml');
   const meta = camelizeKeys(toml.parse(metaContents));
   const dataFiles = glob.sync('data/*.toml');
-  const allCMSES = dataFiles.map((dataFile) => (
+  const allCMSES = dataFiles.map(dataFile =>
     camelizeKeys(toml.parse(fs.readFileSync(dataFile)))
-  ));
+  );
 
   const duplicateURLS = duplicatesForKey(allCMSES, 'url');
   const duplicateGithubRepos = duplicatesForKey(allCMSES, 'githubRepo');
@@ -93,7 +93,7 @@ const generateReadme = () => {
   const cmsesByLanguage = groupBy(allCMSES, 'language');
   const languageKeys = Object.keys(cmsesByLanguage).sort();
 
-  const tocEntries = languageKeys.map((key) => {
+  const tocEntries = languageKeys.map(key => {
     let humanName = languagesToHuman[key];
     if (!humanName) {
       console.error(
@@ -107,64 +107,67 @@ const generateReadme = () => {
     };
   });
 
-  return Promise.all(languageKeys.map((key) => {
-    const cmsesForLanguage = cmsesByLanguage[key];
+  return Promise.all(
+    languageKeys.map(key => {
+      const cmsesForLanguage = cmsesByLanguage[key];
 
-    const cmsPromises = cmsesForLanguage.map(
-      ({ awesomeRepo, name, description, githubRepo, url }) => {
-        const githubURL = githubRepo && `${GITHUB_URL}/${githubRepo}`;
-        const awesomeURL = awesomeRepo && `${GITHUB_URL}/${awesomeRepo}`;
+      const cmsPromises = cmsesForLanguage.map(
+        ({ awesomeRepo, name, description, githubRepo, url }) => {
+          const githubURL = githubRepo && `${GITHUB_URL}/${githubRepo}`;
+          const awesomeURL = awesomeRepo && `${GITHUB_URL}/${awesomeRepo}`;
 
-        if (githubRepo) {
-          return fetchGitHubDetails(githubURL).then(({ starCount, lastCommit }) => {
-            if (typeof starCount !== 'number') {
-              throw new Error(`Error: no star count for ${githubURL}`);
-            }
-            return {
-              awesomeURL,
-              name,
-              githubURL,
-              starCount,
-              starCountText: numberWithCommas(starCount),
-              lastCommit: lastCommit.format('YYYY-MM-DD'),
-              url,
-              description,
-            };
-          });
+          if (githubRepo) {
+            return fetchGitHubDetails(githubURL).then(
+              ({ starCount, lastCommit }) => {
+                if (typeof starCount !== 'number') {
+                  throw new Error(`Error: no star count for ${githubURL}`);
+                }
+                return {
+                  awesomeURL,
+                  name,
+                  githubURL,
+                  starCount,
+                  starCountText: numberWithCommas(starCount),
+                  lastCommit: lastCommit.format('YYYY-MM-DD'),
+                  url,
+                  description,
+                };
+              }
+            );
+          }
+
+          return {
+            awesomeURL,
+            name,
+            url,
+            description,
+          };
         }
+      );
+
+      return Promise.all(cmsPromises).then(cmses => {
+        // Sort by star count or name if starCount not available.
+        const sortedCMSES = cmses[0].githubURL
+          ? sortBy(cmses, ({ starCount }) => starCount).reverse()
+          : sortBy(cmses, ({ name }) => name.toLowerCase());
 
         return {
-          awesomeURL,
-          name,
-          url,
-          description,
+          name: languagesToHuman[key],
+          headerColumns: compact(['Name', 'Description']),
+          cmses: sortedCMSES,
         };
-      }
+      });
+    })
+  ).then(cmsGroups => {
+    fs.writeFileSync(
+      'README.md',
+      readmeTemplate({
+        cmsCount: allCMSES.length,
+        cmsGroups,
+        generationTime: moment().format('MMMM Do, YYYY'),
+        tocEntries,
+      })
     );
-
-    return Promise.all(cmsPromises).then((cmses) => {
-      // Sort by star count or name if starCount not available.
-      const sortedCMSES = cmses[0].githubURL ?
-        sortBy(cmses, ({ starCount }) => starCount).reverse()
-        :
-        sortBy(cmses, ({ name }) => name.toLowerCase());
-
-      return {
-        name: languagesToHuman[key],
-        headerColumns: compact([
-          'Name',
-          'Description',
-        ]),
-        cmses: sortedCMSES,
-      };
-    });
-  })).then((cmsGroups) => {
-    fs.writeFileSync('README.md', readmeTemplate({
-      cmsCount: allCMSES.length,
-      cmsGroups,
-      generationTime: moment().format('MMMM Do, YYYY'),
-      tocEntries,
-    }));
 
     return allCMSES;
   });
