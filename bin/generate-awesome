@@ -23,39 +23,43 @@ cli
   .alias('g')
   .description('Generate README.md')
   .action(() => {
-    const startedAt = (new Date());
+    const startedAt = new Date();
     console.log(`Generating ${green('README.md')}`);
 
-    generateReadme().then((allCMSES) => {
-      const milliseconds = (new Date()).getTime() - startedAt;
-      console.log(
-        `Finished README.md generation for ${allCMSES.length}` +
-        ` CMSes in ${milliseconds / 1000.0} seconds.`
-      );
-    }).catch((error) => {
-      console.error(red('Error generating readme'), error);
-    });
+    generateReadme()
+      .then(allCMSES => {
+        const milliseconds = new Date().getTime() - startedAt;
+        console.log(
+          `Finished README.md generation for ${allCMSES.length}` +
+            ` CMSes in ${milliseconds / 1000.0} seconds.`
+        );
+      })
+      .catch(error => {
+        console.error(red('Error generating readme'), error);
+      });
   });
 
 cli
   .command('add <url>')
   .alias('a')
   .description('Add a new data file with data scraped from <url>')
-  .action((url) => {
+  .action(url => {
     console.log('TODO output this to a file');
     urlToTOML(url)
-      .then((text) => console.log(text))
-      .catch((error) => console.error('test', error));
+      .then(text => console.log(text))
+      .catch(error => console.error('test', error));
   });
 
 function commandNotFound(cmd) {
   console.log(`${EOL}  ${red(cmd)} is not a valid command${EOL}`);
-  console.log(`  Use ${green('generate-awesome --help')} for a full list of commands${EOL}`);
+  console.log(
+    `  Use ${green(
+      'generate-awesome --help'
+    )} for a full list of commands${EOL}`
+  );
 }
 
-cli
-  .on('*', commandNotFound)
-  .parse(process.argv);
+cli.on('*', commandNotFound).parse(process.argv);
 
 if (!cli.args.length) {
   cli.help();
